@@ -149,12 +149,21 @@ class TetrisGame(GameBase):
             self.current_rotation = next_rotation
 
     def _spawn_piece(self) -> None:
-        self.current_shape = random.choice(self.SHAPES)
-        self.current_rotation = 0
-        self.current_x = (self.board_width - 4) // 2
-        self.current_y = 0
-        if self._collision(self.current_x, self.current_y, self.current_rotation):
-            self.game_over = True
+    base = random.choice(self.SHAPES)
+
+    rotations = []
+    matrix = [row[:] for row in base]
+    for _ in range(4):
+        rotations.append([row[:] for row in matrix])
+        # 90° clockwise rotation
+        matrix = [list(row) for row in zip(*matrix[::-1])]
+
+    self.current_shape = rotations
+    self.current_rotation = 0
+    self.current_x = (self.board_width - 4) // 2
+    self.current_y = 0
+    if self._collision(self.current_x, self.current_y, self.current_rotation):
+        self.game_over = True
 
     def _lock_piece(self) -> None:
         for row_index, row in enumerate(self.current_shape[self.current_rotation]):
