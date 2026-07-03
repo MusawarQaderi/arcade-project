@@ -1,19 +1,22 @@
-"""Hardware abstraction for the Pico arcade console."""
+"""Hardware abstraction for Raspberry Pi Pico 2W + SSD1306 + 2 one-axis joysticks."""
 
 from config import Config
 
 try:
     from machine import ADC, I2C, Pin
-    import ssd1306
 except ImportError:
     ADC = None
     I2C = None
     Pin = None
+
+try:
+    import ssd1306
+except ImportError:
     ssd1306 = None
 
 
 class NullDisplay:
-    """Fallback display used outside MicroPython."""
+    """Fallback display used when running syntax checks outside MicroPython."""
 
     width = 128
     height = 64
@@ -33,27 +36,30 @@ class NullDisplay:
     def rect(self, x: int, y: int, width: int, height: int, color: int = 1) -> None:
         _ = (x, y, width, height, color)
 
+    def fill_rect(self, x: int, y: int, width: int, height: int, color: int = 1) -> None:
+        _ = (x, y, width, height, color)
+
     def show(self) -> None:
         return None
 
 
-class NullInput:
-    """Fallback input device used outside MicroPython."""
+class NullRawInput:
+    """Fallback input source for desktop checks."""
 
     def read(self):
         return {
-            "player1": {"x": 0, "y": 0, "button": False},
-            "player2": {"x": 0, "y": 0, "button": False},
+            "p1": {"axis": 32768, "button": False},
+            "p2": {"axis": 32768, "button": False},
         }
 
 
 class Hardware:
-    """Owns the display and will later own the input devices."""
+    """Owns raw hardware resources; higher-level input lives in engine.input."""
 
     def __init__(self, config: Config) -> None:
         self.config = config
         self.display = self._create_display()
-        self.input = self._create_input()
+        self.raw_input = self._create_input()
 
     def _create_display(self):
         if I2C is None or Pin is None or ssd1306 is None:
@@ -74,32 +80,30 @@ class Hardware:
 
     def _create_input(self):
         if ADC is None or Pin is None:
-            return NullInput()
+            return NullRawInput()
+        return RawInputDevice(self.config)
 
-        return InputDevice(self.config)
 
-
-class InputDevice:
-    """Reads the two joysticks and two buttons."""
+class RawInputDevice:
+    """Reads only the required VRy analog axis and active-low button per player."""
 
     def __init__(self, config: Config) -> None:
-        self.player1_x = ADC(Pin(config.player1_x_pin))
-        self.player1_y = ADC(Pin(config.player1_y_pin))
+        # Hardware mapping required by the Pico 2W build:
+        # P1 VRy -> GP26/ADC0, P1 SW -> GP14/PULL_UP
+        # P2 VRy -> GP27/ADC1, P2 SW -> GP15/PULL_UP
+        self.player1_axis = ADC(Pin(config.player1_axis_pin))
         self.player1_button = Pin(config.player1_button_pin, Pin.IN, Pin.PULL_UP)
-        self.player2_x = ADC(Pin(config.player2_x_pin))
-        self.player2_y = ADC(Pin(config.player2_y_pin))
+        self.player2_axis = ADC(Pin(config.player2_axis_pin))
         self.player2_button = Pin(config.player2_button_pin, Pin.IN, Pin.PULL_UP)
 
     def read(self):
         return {
-            "player1": {
-                "x": self.player1_x.read_u16(),
-                "y": self.player1_y.read_u16(),
+            "p1": {
+                "axis": self.player1_axis.read_u16(),
                 "button": self.player1_button.value() == 0,
             },
-            "player2": {
-                "x": self.player2_x.read_u16(),
-                "y": self.player2_y.read_u16(),
+            "p2": {
+                "axis": self.player2_axis.read_u16(),
                 "button": self.player2_button.value() == 0,
             },
         }

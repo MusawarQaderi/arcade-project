@@ -1,0 +1,28 @@
+PICO INSTALL
+============
+
+Copy the CONTENTS of this ZIP directly to the Pico filesystem root.
+
+Correct Pico layout:
+
+/main.py
+/config.py
+/hardware.py
+/renderer.py
+/storage.py
+/engine/core.py
+/engine/input.py
+/ui/menu.py
+/games/reflex.py
+/games/paddle_duel.py
+/docs/TESTING.md
+
+Wrong layout:
+
+/arcade-project-refactor/main.py
+/arcade-project-refactor/config.py
+
+That wrong layout can cause: ImportError: no module named 'config'
+when main.py is started from a different working directory.
+
+Also make sure /ssd1306.py exists on the Pico.
