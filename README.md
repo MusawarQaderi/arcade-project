@@ -1,87 +1,88 @@
 # Arcade Console
 
-Retro arcade console for Raspberry Pi Pico 2W, MicroPython, SSD1306 OLED 128x64, and two one-axis joysticks with buttons.
+Retro-Arcade-Konzept für den **Raspberry Pi Pico 2W** mit **MicroPython**, **SSD1306 OLED (128x64)** und **zwei 1-Achsen-Joysticks mit Tastern**.
 
-## Important Pico install note
+---
 
-Copy the contents of this ZIP directly onto the Pico filesystem root. `main.py` and `config.py` must sit next to each other:
+## Projektkontext
 
-```text
-/main.py
-/config.py
-/hardware.py
-/renderer.py
-/storage.py
-/engine/...
-/ui/...
-/games/...
-```
+Dieses Projekt ist – ähnlich wie mein **FootballHub-Projekt** – im Rahmen meiner **Fachinformatiker-Umschulung** während der **Python-Projektphase** entstanden.  
+Ziel war es, ein strukturiertes Embedded-/MicroPython-Projekt mit klarer Input-Architektur, performanter 128x64-Ausgabe und modularer Spielelogik umzusetzen.
 
-Do not copy only `main.py`. If `config.py` is missing from the same Pico folder, MicroPython will report `ImportError: no module named 'config'`.
+---
 
-`main.py` also adds its own folder to `sys.path` to make Thonny/subfolder execution more tolerant.
+## Projektziel
 
-## Current focus
+Der Fokus liegt auf einer stabilen, klaren und bewusst reduzierten Arcade-Umgebung für 1D-Eingaben:
 
-This refactor targets the strict Pico 2W wiring below and removes menu entries for games that require two-dimensional directional input. The UI is constrained to an 8-row grid because the SSD1306 built-in font is 8 px high.
+- saubere Trennung von Hardware, Engine, UI und Spielmodi
+- robuste Joystick-Verarbeitung (Kalibrierung, Deadzone, Hysterese)
+- konsistente Darstellung auf dem SSD1306-Display
+- wartbare, erweiterbare Projektstruktur
 
-## Hardware wiring
+---
 
-| Function | Pico pin | Notes |
-|---|---:|---|
-| Joystick 1 VRy | GP26 / ADC0 | single analog axis |
-| Joystick 1 SW | GP14 | `Pin.PULL_UP`, pressed = low |
-| Joystick 2 VRy | GP27 / ADC1 | single analog axis |
-| Joystick 2 SW | GP15 | `Pin.PULL_UP`, pressed = low |
-| OLED SDA | GP0 | kept compatible with existing repo config |
-| OLED SCL | GP1 | kept compatible with existing repo config |
+## Hardware-Setup (Projektbasis)
 
-## Input behavior
+| Funktion         | Pico-Pin      | Hinweis                            |
+|------------------|---------------|------------------------------------|
+| Joystick 1 VRy   | GP26 / ADC0   | einzelne Analogachse               |
+| Joystick 1 SW    | GP14          | `Pin.PULL_UP`, gedrückt = Low      |
+| Joystick 2 VRy   | GP27 / ADC1   | einzelne Analogachse               |
+| Joystick 2 SW    | GP15          | `Pin.PULL_UP`, gedrückt = Low      |
+| OLED SDA         | GP0           | I2C-Datenleitung                   |
+| OLED SCL         | GP1           | I2C-Taktleitung                    |
 
-- Boot-time center calibration averages both VRy axes before the intro starts.
-- A calibration screen is shown so the boot does not look frozen.
-- Deadzone and hysteresis prevent noisy neutral flicker.
-- Menu UP/DOWN supports initial movement plus repeat while held.
-- Short button press emits `SELECT`.
-- Holding the button emits `BACK`.
-- Per-player axis inversion flags are available in `config.py` and in the Settings menu.
+---
 
-## Startup intro
+## Technische Merkmale
 
-The boot now uses an original retro “BLITZ ARCADE” sequence:
+### Input-Verarbeitung
+- Boot-Kalibrierung beider Analogachsen
+- sichtbarer Kalibrierungsstatus beim Start
+- Deadzone + Hysterese zur Stabilisierung der Neutralstellung
+- Menü-Navigation mit Wiederholverhalten bei gehaltenem Input
+- kurzer Tastendruck: **SELECT**
+- langer Tastendruck: **BACK**
+- Achsinvertierung pro Spieler konfigurierbar
 
-- calibration progress bar
-- fast one-bit speed lines
-- expanding arcade frame/ring
-- block-logo slide-in
-- simple shine sweep
-- skip with any button press
+### UI/Rendering (128x64)
+- 8-Pixel-Zeilenraster für saubere Textausrichtung
+- automatische Kürzung langer Labels mit `...`
+- zentrale Clipping-Logik im Renderer
+- maximal ein `display.show()` pro Frame
 
-No third-party logo or trademark bitmap is copied.
+### Intro-Sequenz
+Originale Retro-Sequenz **„BLITZ ARCADE“** mit:
+- Kalibrierungsbalken
+- 1-Bit-Speedlines
+- Frame/Ring-Animation
+- Logo-Slide-in
+- Shine-Effekt
+- Skip per Button
 
-## 128x64 UI rules
+---
 
-- Every text line is placed on an 8 px row.
-- Long labels are clipped with ellipsis.
-- The renderer owns clipping helpers.
-- The app loop performs at most one `display.show()` per rendered frame.
+## Spielmodi (1D-kompatibel)
 
-## Kept 1D-compatible modes
+- **Reflex Lane**  
+  Ein-Spieler-Modus mit vertikaler Auswahlbewegung und Timing-Fokus.
 
-- `Reflex Lane`: one-player lane-selection game using UP/DOWN + SELECT.
-- `Paddle Duel`: two-player vertical paddle duel using one axis per player.
-- `Input Test`: diagnostics for both joysticks.
+- **Paddle Duel**  
+  Zwei-Spieler-Paddle-Duell mit je einer vertikalen Achse pro Spieler.
 
-## Removed / disabled 2D modes
+- **Input Test**  
+  Diagnoseansicht für beide Joysticks und Tasterzustände.
 
-The following modes are intentionally not shown because they normally require two-axis input or richer directional control:
+---
 
-- Snake
-- Breakout
-- Tetris
-- Any optional 2D directional modes from the original architecture prompt
+## Bewusste Abgrenzung
 
-## Project structure
+2D-lastige Modi wurden in diesem Projektstand gezielt entfernt bzw. deaktiviert, um ein konsistentes 1D-Eingabekonzept einzuhalten (z. B. Snake, Breakout, Tetris).
+
+---
+
+## Projektstruktur
 
 ```text
 main.py
@@ -103,17 +104,9 @@ docs/
   TESTING.md
 ```
 
-## Install
+---
 
-1. Flash MicroPython for Raspberry Pi Pico 2W.
-2. Copy all files/folders from this ZIP to the Pico root.
-3. Add the SSD1306 driver as `/ssd1306.py` if it is not already present.
-4. Keep both joystick axes centered.
-5. Reset the Pico.
+## Kurzfazit
 
-Run manually if needed:
-
-```python
-import main
-main.main()
-```
+**Arcade Console** zeigt meinen praxisnahen Ansatz in der Umschulung:  
+Hardware-nahe Python-Entwicklung, modulare Softwarestruktur und technische Reduktion auf ein klares, funktionales Bedienkonzept.
