@@ -16,7 +16,9 @@
 
 ## 📖 Über das Projekt
 **Arcade Console** ist ein eingebettetes MicroPython-Projekt für den **Raspberry Pi Pico 2W**, das im Rahmen meiner Umschulung zum **Fachinformatiker für Systemintegration** entstanden ist. Ziel war es, eine performante 128x64 OLED-Ausgabe mit einer robusten Hardware-Eingabe (Joysticks) und modularer Spielelogik zu verbinden.
-
+<td width="45%" align="center" valign="middle">
+  <img src="arcade-ezgif.com-video-to-gif-converter.gif" width="350" alt="Arcade Console Gameplay" />
+</td>
 ---
 
 ## 🎯 Ziel des Projekts
